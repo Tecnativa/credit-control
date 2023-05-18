@@ -10,9 +10,6 @@
                 />
             </t>
             <div class="page">
-                <h2 id="policy_level">
-                    <span t-field="doc.policy_level_id.name" />
-                </h2>
                 <div id="informations" class="row my-3">
                     <div class="col-auto mw-100 mb-2" name="date">
                         <strong>Date:</strong>
