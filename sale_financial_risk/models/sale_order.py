@@ -60,7 +60,7 @@ class SaleOrder(models.Model):
     def _get_risk_states(self):
         risk_states = ["sale"]
         ICP = self.env["ir.config_parameter"].sudo()
-        if ICP.get_param("sale_financial_risk.include_risk_sale_order_done"):
+        if ICP.get_bool("sale_financial_risk.include_risk_sale_order_done"):
             risk_states.append("done")
         return risk_states
 
@@ -96,6 +96,7 @@ class SaleOrderLine(models.Model):
     )
     def _compute_risk_amount(self):
         risk_states = self.env["sale.order"]._get_risk_states()
+        digits = self.env["decimal.precision"].precision_get("Product Unit")
         for line in self:
             if line.state not in risk_states or line.display_type:
                 line.risk_amount = 0.0
@@ -103,21 +104,18 @@ class SaleOrderLine(models.Model):
             qty = line.product_uom_qty
             if line.product_id.invoice_policy == "delivery":
                 qty = max(qty, line.qty_delivered)
-            risk_qty = float_round(
-                qty - line.qty_invoiced,
-                precision_rounding=line.product_uom_id.rounding or 0.01,
-            )
+            risk_qty = float_round(qty - line.qty_invoiced, precision_digits=digits)
             # There is no risk if the line hasn't stock moves to deliver
             # Added hasattr condition because fails in post-migration compute
             if (
                 risk_qty
                 and line.qty_delivered_method == "stock_move"
                 and (hasattr(line, "move_ids"))
-            ):
-                if not line.move_ids.filtered(
+                and not line.move_ids.filtered(
                     lambda move: move.state not in ("done", "cancel")
-                ):
-                    risk_qty = line.qty_to_invoice
+                )
+            ):
+                risk_qty = line.qty_to_invoice
             if risk_qty == 0.0:
                 line.risk_amount = 0.0
                 continue

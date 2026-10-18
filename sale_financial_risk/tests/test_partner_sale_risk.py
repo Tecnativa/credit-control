@@ -1,10 +1,12 @@
 # Copyright 2016-2018 Tecnativa - Carlos Dauden
 # License AGPL-3.0 or later (https://www.gnu.org/licenses/agpl).
 
+from datetime import timedelta
+
 from odoo import Command, fields
 from odoo.tests import TransactionCase, new_test_user
 
-from odoo.addons.base.tests.common import DISABLED_MAIL_CONTEXT
+from odoo.addons.base.tests.common import DISABLED_MAIL_CREATE_CONTEXT
 
 
 class TestPartnerSaleRisk(TransactionCase):
@@ -12,7 +14,7 @@ class TestPartnerSaleRisk(TransactionCase):
     def setUpClass(cls):
         super().setUpClass()
         cls.Account = cls.env["account.account"]
-        cls.env = cls.env(context=dict(cls.env.context, **DISABLED_MAIL_CONTEXT))
+        cls.env = cls.env(context=dict(cls.env.context, **DISABLED_MAIL_CREATE_CONTEXT))
         cls.env.user.group_ids |= cls.env.ref(
             "account_financial_risk.group_account_financial_risk_manager"
         )
@@ -245,7 +247,8 @@ class TestPartnerSaleRisk(TransactionCase):
         self.env["res.currency.rate"].create(
             {
                 "currency_id": self.main_currency.id,
-                "name": fields.Date.today(),
+                # Rates apply from the day after their date
+                "name": fields.Date.today() - timedelta(days=1),
                 "rate": 0.5,
                 "company_id": self.env.company.id,
             }
@@ -275,7 +278,8 @@ class TestPartnerSaleRisk(TransactionCase):
         self.env["res.currency.rate"].create(
             {
                 "currency_id": self.main_currency.id,
-                "name": fields.Date.today(),
+                # Rates apply from the day after their date
+                "name": fields.Date.today() - timedelta(days=1),
                 "rate": 2.0,
                 "company_id": self.env.company.id,
             }
